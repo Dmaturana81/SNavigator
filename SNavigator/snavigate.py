@@ -16,7 +16,7 @@ import pandas as pd
 from retry import retry
 from requests.exceptions import RequestException
 
-from .parser import *
+from SNavigator.parser import *
 
 import os
 from dotenv import load_dotenv
