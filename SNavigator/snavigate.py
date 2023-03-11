@@ -4,6 +4,7 @@
 __all__ = ['path_to_browsermobproxy', 'url', 'username', 'passw', 'Navigator']
 
 # %% ../nbs/00_SNavigate.ipynb 4
+from fastcore.all import *
 from selenium import webdriver    
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -48,7 +49,9 @@ class Navigator():
         if login:
             self.login()
 
-    def login(self)->None:
+# %% ../nbs/00_SNavigate.ipynb 8
+@patch
+def login(self:Navigator)->None:
         """
         Method to loging to Sales NAvigator from the webrDriver created
         """
@@ -65,15 +68,18 @@ class Navigator():
         wait = WebDriverWait(self.driver, timeout=30, poll_frequency=2, ignored_exceptions=[ElementNotVisibleException, ElementNotSelectableException])
         wait.until(lambda d: d.find_element(By.CLASS_NAME,"homepage__right-column"))        
 
-    def close(self)->None:
+# %% ../nbs/00_SNavigate.ipynb 9
+@patch
+def close(self:Navigator)->None:
         """
         Close the Webdriver
         """
         self.server.stop()
         self.driver.close()
 
-    
-    def scroll_bottom(self,
+# %% ../nbs/00_SNavigate.ipynb 10
+@patch    
+def scroll_bottom(self:Navigator,
                       t_time: int=50, #Total time to spend in hte webpage
                       pause: int=1,#Time pause to scroll one more step
                       # total_steps:int = 10, #Number of steps to go down
@@ -101,8 +107,9 @@ class Navigator():
             elif initial_height >= last_height:
                 break
 
-    
-    def next_page(self, url=None)->bool:
+# %% ../nbs/00_SNavigate.ipynb 11
+@patch    
+def next_page(self:Navigator, url=None)->bool:
         """
         Method to select button for next page, if exist
         """
@@ -128,7 +135,9 @@ class Navigator():
         else:
             return False
 
-    def get_companies_ids(self)->list:
+# %% ../nbs/00_SNavigate.ipynb 12
+@patch
+def get_companies_ids(self:Navigator)->list:
         """
         Method to get companies Ids from a website
         """
@@ -137,7 +146,9 @@ class Navigator():
         ids = [f"{company.get('href').split('/')[-1]}" for company in companies]
         return ids
 
-    def scrap_ids(self,
+# %% ../nbs/00_SNavigate.ipynb 13
+@patch
+def scrap_ids(self:Navigator,
                   url=None
                  )->list:
         """
@@ -152,7 +163,11 @@ class Navigator():
             ids.extend(self.scrap_ids())
         return ids
     
-    def get_url(self,
+    
+
+# %% ../nbs/00_SNavigate.ipynb 14
+@patch
+def get_url(self:Navigator,
                 url:str #Url string to visit and return the address
                )->str:
         """
@@ -160,7 +175,9 @@ class Navigator():
         """
         self.driver.get(url)
 
-    def parse_search(self,
+# %% ../nbs/00_SNavigate.ipynb 15
+@patch
+def parse_search(self:Navigator,
                      url:str =None, #Url address for the search result
                      results:str ='leads' #Kind of record to scrap, it can be 'leads', 'accounts', 'skills', 'data'. Default 'leads'
                     )->pd.DataFrame:
@@ -189,7 +206,9 @@ class Navigator():
         else:
             return
 
-    def get_data(self,
+# %% ../nbs/00_SNavigate.ipynb 16
+@patch
+def get_data(self:Navigator,
                  url:str = None, #Url to visit, 
                  results:str = 'leads', #Kind of record to return, it can be 'leads', 'accounts', 'skills' ,'data'. Default: leads
                  scrol_time:int=60, #Time that will take to scroll to the bottom. Default 60 seconds
