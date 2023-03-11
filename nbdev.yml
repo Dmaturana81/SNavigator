@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "snavigator"
+  site-url: "https://Dmaturana81.github.io/snavigator"
+  description: "Library to use selenium and webdriver to enter to Sales Navigator website"
+  repo-branch: main
+  repo-url: "https://github.com/Dmaturana81/snavigator"
