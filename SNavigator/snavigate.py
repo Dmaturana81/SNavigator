@@ -4,7 +4,7 @@
 __all__ = ['path_to_browsermobproxy', 'url', 'username', 'passw', 'Navigator']
 
 # %% ../nbs/00_SNavigate.ipynb 4
-from selenium import webdriver    # to  control the chrome browser
+from selenium import webdriver    
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -15,25 +15,21 @@ from browsermobproxy import Server
 import pandas as pd
 from retry import retry
 from requests.exceptions import RequestException
-
 from .parser import *
-
 import os
 from dotenv import load_dotenv
-
-from bs4 import BeautifulSoup     # to parse the page source
+from bs4 import BeautifulSoup     
 import random
 import time
 
-# %% ../nbs/00_SNavigate.ipynb 5
+# %% ../nbs/00_SNavigate.ipynb 6
 load_dotenv('/Volumes/Users/matu/pass.env')
-
 path_to_browsermobproxy = "/Volumes/Users/matu/Documents/Xcode/browsermob-proxy-2.1.4/bin/"
 url = 'https://www.linkedin.com/sales/login'
 username = os.environ.get('SN_USER')
 passw = os.environ.get('SN_PASS')
 
-# %% ../nbs/00_SNavigate.ipynb 6
+# %% ../nbs/00_SNavigate.ipynb 7
 class Navigator():
     def __init__(self
                  ,headless=False, #Make the Chromium Headless or not
@@ -67,9 +63,7 @@ class Navigator():
         singin = self.driver.find_element(By.TAG_NAME, 'button')
         singin.click()
         wait = WebDriverWait(self.driver, timeout=30, poll_frequency=2, ignored_exceptions=[ElementNotVisibleException, ElementNotSelectableException])
-        wait.until(lambda d: d.find_element(By.CLASS_NAME,"homepage__right-column"))
-        # time.sleep(random.randint(10,20))
-        
+        wait.until(lambda d: d.find_element(By.CLASS_NAME,"homepage__right-column"))        
 
     def close(self)->None:
         """
@@ -176,9 +170,7 @@ class Navigator():
         reload = True
 
         #IF reload True (default is True)
-        while reload :
-            # self.scroll_bottom(t_time= random.randint(5,7), move=False)
-            
+        while reload :            
             leads, accounts, skills, data = parse_HAR(har = self.proxy.har)
             if leads.shape[0] == 0 or leads.loc[leads.lastName.isnull()].shape[0] > 0 or leads.loc[leads.lastName == ''].shape[0] > 0:
                 print(f"Reloading with number of leads {leads.shape[0]}")
@@ -186,7 +178,6 @@ class Navigator():
                 time.sleep(5)
             else:
                 reload = False
-        # print(leads.shape)    
         if results == 'leads':
             return leads
         elif results == 'accounts':
@@ -199,10 +190,10 @@ class Navigator():
             return
 
     def get_data(self,
-                 url:str = None,
-                 results:str = 'leads',
-                 scrol_time:int=60,
-                 scrol:int = True
+                 url:str = None, #Url to visit, 
+                 results:str = 'leads', #Kind of record to return, it can be 'leads', 'accounts', 'skills' ,'data'. Default: leads
+                 scrol_time:int=60, #Time that will take to scroll to the bottom. Default 60 seconds
+                 scrol:bool = True #If its going to scroll at all. Defalt:True
                 ):
         self.proxy.new_har(f"list.har", options={'captureHeaders': False,'captureContent': True, 'captureBinaryContent': True})
         if url:

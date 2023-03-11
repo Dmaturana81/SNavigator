@@ -8,7 +8,7 @@ __all__ = ['url_profile', 'account2company_keys', 'parse_account_page', 'account
            'parse_date', 'parse_past_positions', 'load_har', 'load_hars', 'parse_revenue', 'parse_HAR',
            'sorting_columns', 'sorting_columns_accounts', 'merge', 'longer']
 
-# %% ../nbs/01_parser.ipynb 3
+# %% ../nbs/01_parser.ipynb 4
 import json
 from pathlib import Path
 import pandas as pd
@@ -16,7 +16,7 @@ from datetime import datetime, date
 import numpy as np
 import re
 
-# %% ../nbs/01_parser.ipynb 4
+# %% ../nbs/01_parser.ipynb 6
 url_profile = 'https://www.linkedin.com/sales/people/'
 account2company_keys = {    
     'name' : 'name',
@@ -31,8 +31,12 @@ account2company_keys = {
     'teamLinkConnectionsDisplayCount' : 'teamLinkConnectionsDisplayCount'
     }
 
-# %% ../nbs/01_parser.ipynb 5
-def parse_account_page(account_p: dict):
+# %% ../nbs/01_parser.ipynb 7
+def parse_account_page(account_p: dict, #Dictionary from the parser with accoun tinformation
+                      )->dict:
+    """
+    Function that receive the data from the account profile and parse it
+    """
     company = {}
     company['linkedin_id'] = account_p['entityUrn'].split(':')[-1]
     for k,v in account_p.items():
@@ -60,8 +64,9 @@ def parse_account_page(account_p: dict):
         company.update(hq)
     return company
 
-# %% ../nbs/01_parser.ipynb 6
-def account_parse_search(account):
+# %% ../nbs/01_parser.ipynb 8
+def account_parse_search(account: dict, #Dictionary with account info coming from person profile or search profiles
+                        )->dict:
     """
     Hay que arreglar esta funcion para poder recuperar más información si es posible como revenue y otras, además de manejar si no encuentra los key.
     podemos generar un diccionario de correspondencia para transformar todo en los key del modelo
@@ -73,8 +78,13 @@ def account_parse_search(account):
     company['industry'] = account['industry'] if 'industry' in account.keys() else ''  
     return company
 
-# %% ../nbs/01_parser.ipynb 7
-def parse_interest_buyer(buyerinterest):
+# %% ../nbs/01_parser.ipynb 9
+def parse_interest_buyer(buyerinterest: dict, #Information about the interest buyer intent (IBI).
+                        )->dict:
+    
+    """
+    Function that parse the inforamtion of the buyer intent to add it to a database.
+    """
     buyerinterest.update({'linkedin_id':buyerinterest['buyer'].split(':')[-1]})
     _ = buyerinterest.pop('seller') if 'seller' in buyerinterest.keys() else ''
     _ = buyerinterest.pop('sellerCompany') if 'sellerCompany' in buyerinterest.keys() else ''
@@ -86,8 +96,13 @@ def parse_interest_buyer(buyerinterest):
         buyerinterest.update({feature['name']:feature['level']})
     return buyerinterest
 
-# %% ../nbs/01_parser.ipynb 8
-def parse_employees(employees):
+# %% ../nbs/01_parser.ipynb 10
+def parse_employees(employees:dict, #Information about number of employees of an account
+                   )->dict:
+    
+    """
+    Funtion toclean the infomration of the account concerning the employee number and evolution
+    """
     employees['linkedin_id'] = employees.pop('entityUrn').split(':')[-1]
     employees['employees'] = int(employees.pop('employeeCount'))
     _ = employees.pop('sharedAlumniSchoolIds') if 'sharedAlumniSchoolIds' in employees.keys() else ''
@@ -96,8 +111,13 @@ def parse_employees(employees):
     _ = employees.pop('employeeCountRange') if 'employeeCountRange' in employees.keys() else ''   
     return employees
 
-# %% ../nbs/01_parser.ipynb 9
-def clean_lead_keys(lead):
+# %% ../nbs/01_parser.ipynb 11
+def clean_lead_keys(lead:dict, #Dictionary with lead information
+                   )->dict:
+    
+    """
+    Function to clean unuseful data from the different results. In case you want to keep something from here, just comment the line.
+    """
     _ = lead.pop('$recipeType') if '$recipeType' in lead.keys() else ''
     _ = lead.pop('$anti_abuse_metadata') if '$anti_abuse_metadata' in lead.keys() else ''
     _ = lead.pop('$anti_abuse_annotations') if '$anti_abuse_annotations' in lead.keys() else ''
@@ -145,8 +165,12 @@ def clean_lead_keys(lead):
     _ = lead.pop('volunteeringExperiences') if 'volunteeringExperiences' in lead.keys() else ''
     return lead
 
-# %% ../nbs/01_parser.ipynb 10
-def parse_lead_dict(lead):
+# %% ../nbs/01_parser.ipynb 12
+def parse_lead_dict(lead:dict, #
+                   )->dict:
+    """
+    Parsing of the Leads dictionary. Cleaning and ordering the dict
+    """
     if 'profileUrnResolutionError' in lead.keys():
         print(f"Profile Error ")
         return {}
@@ -156,10 +180,7 @@ def parse_lead_dict(lead):
         c_position = c_position[0]
         current = parse_current_position(c_position)
         lead.update(current)
-        # lead['companyName'] = c_position['companyName'] if 'companyName' in c_position.keys() else None
-        # lead['title'] = c_position['title'] if 'title' in c_position.keys() else None
         lead['company_location'] = c_position['location'] if 'location' in c_position.keys() else None
-        # lead['company_id'] = c_position['companyUrn'].split(':')[-1] if 'companyUrn' in c_position.keys() else None
         lead.update(c_position['tenureAtCompany'])
         lead['company_industry'] = c_position['industry'] if 'industry' in c_position.keys() else None
 
@@ -174,7 +195,6 @@ def parse_lead_dict(lead):
     else:
         lead['teamlink'] = 0
     lead['shared_conection'] = lead['sharedConnectionsHighlight']['count'] if 'sharedConnectionsHighlight' in lead.keys() else 0
-    # _ = lead.pop('sharedConnectionsHighlight') if 'sharedConnectionsHighlight' in lead.keys() else ''
     lead['pastPositions'] = parse_past_positions(lead['pastPositions']) if 'pastPositions' in lead.keys() else ''
     highlights = lead.pop('spotlightHighlights') if 'spotlightHighlights' in lead.keys() else None
     while highlights:
@@ -187,10 +207,14 @@ def parse_lead_dict(lead):
         elif highlight['type'] == 'RECENT_POSITION_CHANGE':
             change = highlight['highlight']['com.linkedin.sales.deco.common.profile.highlights.DecoratedRecentPositionChangeHighlight']
             lead['changed_position'] = change['duration'] 
-    return clean_lead_keys(lead) #lead
+    return clean_lead_keys(lead) 
 
-# %% ../nbs/01_parser.ipynb 11
-def parse_rlead_dict(lead):
+# %% ../nbs/01_parser.ipynb 13
+def parse_rlead_dict(lead:dict, #Information of the recommended lead from the HAR
+                    )->dict:
+    """
+    Function that parse and clean the recommended leads from account page or profiles pages
+    """
     # print(f"RLEAD FUNCTION {lead}")
     old_positions = []
     if 'profileUrnResolutionError' in lead.keys():
@@ -212,14 +236,11 @@ def parse_rlead_dict(lead):
         lead['linkedin'] = create_link(linkedin)
     if lead.get('summary'):
         lead['summary'] = clean_text_string_func(lead['summary'])
-    # lead = clean_lead_keys(lead)
-
     if 'teamlink' in lead.keys() and lead['teamlink']:
         tmp = lead.pop('teamlinkIntrosHighlight')
         lead['teamlink'] = tmp['count']
     else:
         lead['teamlink'] = 0
-    # _ = lead.pop('profilePictureDisplayImage') if 'profilePictureDisplayImage' in lead.keys() else ''
     lead['shared_conection'] = lead['sharedConnectionsHighlight']['count'] if 'sharedConnectionsHighlight' in lead.keys() else 0
     k_flattern = []
     for k,v in lead.items():
@@ -230,13 +251,21 @@ def parse_rlead_dict(lead):
         lead.update(tmp_dict)
     return clean_lead_keys(lead)
 
-# %% ../nbs/01_parser.ipynb 12
-def create_link(entityUrn):
+# %% ../nbs/01_parser.ipynb 14
+def create_link(entityUrn:str , #String with the entityUrn
+               )->str:
+    """
+    Transform the entityUrn into a profile url in SN
+    """
     matched = re.search('\((.*)\)', entityUrn)
     return f"{url_profile}{matched.groups()[0]}" if matched else entityUrn
 
-# %% ../nbs/01_parser.ipynb 13
-def parse_old_position(position):
+# %% ../nbs/01_parser.ipynb 15
+def parse_old_position(position:dict, #Dictionary with old positions information
+                      )-> dict:
+    """
+    Function to parse and clean the old positions information
+    """
     description = clean_text_string_func(position['description']) if 'description' in position.keys() else ''
     title = position['title'] if 'title' in position.keys() else ''
     started = parse_date(position['startedOn']).year if 'startedOn' in position.keys() else 0
@@ -244,21 +273,24 @@ def parse_old_position(position):
     company = position['companyName'] if 'companyName' in position.keys() else ''
     return f"{company}; {title}; {description}; {started}-{ended}"
 
-# %% ../nbs/01_parser.ipynb 14
-def parse_skills(data):
+# %% ../nbs/01_parser.ipynb 16
+def parse_skills(data:dict,#Data from skills infomration
+                )->dict:
+    
+    """
+    Function that transform list of dicitonaries from skills into a list of skills. Add the entityUrn of the Lead to create the relation in the database
+    """
     # print("#### SKILLS PARSING: ####")
     skills = {'entityUrn':data['entityUrn']}
     skills['skills'] = [skill['name'] for skill in data['skills']]
-    # for skill in data['skills']:
-    #     try:
-    #         skills.update({skill['name']:skill['numOfEndorsement']})
-    #     except:
-    #         print("problem getting skills'")
-    #         pass
     return skills
 
-# %% ../nbs/01_parser.ipynb 15
-def parse_profile_page(profile):
+# %% ../nbs/01_parser.ipynb 17
+def parse_profile_page(profile:dict, #Infomration of the Profile as dictionary
+                      )->dict:
+    """
+    Function to parse and clean the information from the profile website
+    """
     # print(f"PROFILE FUNCTION {profile}")
     skills = {'entityUrn':profile['entityUrn']}
     for skill in profile['skills']:
@@ -267,8 +299,6 @@ def parse_profile_page(profile):
         except:
             pass
     profile['skills'] = [skill['name'] for skill in profile['skills']]
-    # projects = profile['projects']
-    # profile = clean_lead_keys(profile)
     profile['linkedin'] = create_link(profile['entityUrn'])
     if profile.get('summary'):
         profile['summary'] = clean_text_string_func(profile.pop('summary'))
@@ -280,8 +310,9 @@ def parse_profile_page(profile):
     profile['old_positions'] = old
     return clean_lead_keys(profile), skills
 
-# %% ../nbs/01_parser.ipynb 16
-def parse_info_profile(profile):
+# %% ../nbs/01_parser.ipynb 18
+def parse_info_profile(profile:dict, ##Infomration of the Profile as dictionary
+                      )->dict:
     # print(f"INFO PROFILE FUNCTION {profile}")
     profile = clean_lead_keys(profile)
     contacts = parse_contactInfo(profile.pop('contactInfo'))
@@ -291,8 +322,12 @@ def parse_info_profile(profile):
     profile['old_positions'] = old
     return profile
 
-# %% ../nbs/01_parser.ipynb 17
-def parse_contactInfo(contactInfo):
+# %% ../nbs/01_parser.ipynb 19
+def parse_contactInfo(contactInfo:dict, #Dictionary containing the contact information from the profile website
+                     )->dict:
+    """
+    Function that parse and clean the contact information from the profile page. Just keep contact and social media info
+    """
     contact = {}
     if contactInfo.get('primaryEmail'):
         contact['email'] = contactInfo['primaryEmail']
@@ -302,7 +337,7 @@ def parse_contactInfo(contactInfo):
                 contact[i['type']] = i['name']
     return contact
 
-# %% ../nbs/01_parser.ipynb 18
+# %% ../nbs/01_parser.ipynb 20
 def parse_publications(publications):
     publications_list = []
     for publication in publications:
@@ -311,7 +346,7 @@ def parse_publications(publications):
         publications_list.append(f"{title}. {abstract}")
     return "; ".join(publications_list)
 
-# %% ../nbs/01_parser.ipynb 19
+# %% ../nbs/01_parser.ipynb 21
 def parse_projects(projects):
     projects_list = []
     for project in projects:
@@ -322,7 +357,7 @@ def parse_projects(projects):
     return "; ".join(projects_list)
   
 
-# %% ../nbs/01_parser.ipynb 20
+# %% ../nbs/01_parser.ipynb 22
 def parse_patents(patents):
     patents_list = []
     for patent in patents:
@@ -331,7 +366,7 @@ def parse_patents(patents):
     return "; ".join(patents_list)
  
 
-# %% ../nbs/01_parser.ipynb 21
+# %% ../nbs/01_parser.ipynb 23
 def parse_positions(positions):
     old_positions = []
     current = {}
@@ -344,7 +379,7 @@ def parse_positions(positions):
     old = parse_past_positions(old_positions)
     return current, old
 
-# %% ../nbs/01_parser.ipynb 22
+# %% ../nbs/01_parser.ipynb 24
 def parse_current_position(position:dict):
     """
     Function to parse the current position. Receive a dictionary with the info of current position '$recipetype DecoratedPosition'
@@ -366,7 +401,7 @@ def parse_current_position(position:dict):
     return position
   
 
-# %% ../nbs/01_parser.ipynb 23
+# %% ../nbs/01_parser.ipynb 25
 def parse_date(dateOn):
     datelist = []
     for k in ['year', 'month', 'day']:
@@ -376,7 +411,7 @@ def parse_date(dateOn):
             datelist.append(1)
     return datetime(*datelist)
 
-# %% ../nbs/01_parser.ipynb 24
+# %% ../nbs/01_parser.ipynb 26
 def parse_past_positions(positions):
     pos_list = []
     for position in positions:
@@ -387,14 +422,14 @@ def parse_past_positions(positions):
         pos_list.append(f"{company}; {title}; {started}-{ended}")
     return "/ ".join(pos_list)
 
-# %% ../nbs/01_parser.ipynb 25
+# %% ../nbs/01_parser.ipynb 27
 def load_har(file):
     with open(file,'r') as fin:
         tmp = json.loads(fin.read())
     return tmp
   
 
-# %% ../nbs/01_parser.ipynb 26
+# %% ../nbs/01_parser.ipynb 28
 def load_hars(path, recursive=False):
     tmp_j = {'log':{'entries':[]}}
     if recursive:
@@ -408,7 +443,7 @@ def load_hars(path, recursive=False):
             tmp_j['log']['entries'].extend(tmp['log']['entries'])
     return tmp_j
 
-# %% ../nbs/01_parser.ipynb 27
+# %% ../nbs/01_parser.ipynb 29
 def parse_revenue(revenueRange):
     if 'reportedRevenue' in revenueRange.keys():
         revenue = revenueRange['reportedRevenue']
@@ -426,7 +461,7 @@ def parse_revenue(revenueRange):
     else:
         return amount
 
-# %% ../nbs/01_parser.ipynb 28
+# %% ../nbs/01_parser.ipynb 30
 def parse_HAR(file=False, several=False, recursive=False, har=False):
     if har:
         tmp_j = har
@@ -500,19 +535,19 @@ def parse_HAR(file=False, several=False, recursive=False, har=False):
             pd.DataFrame(skills_list).drop_duplicates('entityUrn').fillna(0), data
    
 
-# %% ../nbs/01_parser.ipynb 29
+# %% ../nbs/01_parser.ipynb 31
 def sorting_columns(columns: list):
     prefered_order = ['summary', 'pos_description', 'publications', 'projects']
     filter_order = [x for x in prefered_order if x in columns]
     return filter_order
 
-# %% ../nbs/01_parser.ipynb 30
+# %% ../nbs/01_parser.ipynb 32
 def sorting_columns_accounts(columns: list):
     prefered_order = ['description', 'revenue','score']
     filter_order = [x for x in prefered_order if x in columns]
     return filter_order
 
-# %% ../nbs/01_parser.ipynb 31
+# %% ../nbs/01_parser.ipynb 33
 def merge(*data, on='entityUrn'):#leads, rleads, profiles, contacts):
     merged = data[0]
     for i in range(1,len(data)):
@@ -532,7 +567,7 @@ def merge(*data, on='entityUrn'):#leads, rleads, profiles, contacts):
         merged = df1.copy()
     return merged.reset_index(drop=True)
 
-# %% ../nbs/01_parser.ipynb 32
+# %% ../nbs/01_parser.ipynb 34
 def longer(s1, s2):
     if isinstance(s1, (int, float)):
         return s2
