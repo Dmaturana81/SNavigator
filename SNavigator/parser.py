@@ -15,6 +15,7 @@ import pandas as pd
 from datetime import datetime, date
 import numpy as np
 import re
+from fastcore.all import *
 
 # %% ../nbs/01_parser.ipynb 6
 url_profile = 'https://www.linkedin.com/sales/people/'
@@ -313,6 +314,9 @@ def parse_profile_page(profile:dict, #Infomration of the Profile as dictionary
 # %% ../nbs/01_parser.ipynb 18
 def parse_info_profile(profile:dict, ##Infomration of the Profile as dictionary
                       )->dict:
+    """
+    Function that parse information from a profile at linkedin
+    """
     # print(f"INFO PROFILE FUNCTION {profile}")
     profile = clean_lead_keys(profile)
     contacts = parse_contactInfo(profile.pop('contactInfo'))
@@ -338,7 +342,11 @@ def parse_contactInfo(contactInfo:dict, #Dictionary containing the contact infor
     return contact
 
 # %% ../nbs/01_parser.ipynb 20
-def parse_publications(publications):
+def parse_publications(publications:list, #
+                      )->str:
+    """
+    Function that takes the publications list from the profile, and return a string with all titles and descriptions separated by semicolon
+    """
     publications_list = []
     for publication in publications:
         title = publication['name'] if 'name' in publication.keys() else ''
@@ -347,7 +355,11 @@ def parse_publications(publications):
     return "; ".join(publications_list)
 
 # %% ../nbs/01_parser.ipynb 21
-def parse_projects(projects):
+def parse_projects(projects:list, #List of projects from the linkedin profile page
+                  )->str:
+    """
+    Function that receive the list of projects from a linkedin profile and return a string with all projects separated by semicolon
+    """
     projects_list = []
     for project in projects:
         started = parse_date(project['startedOn']).year if 'startedOn' in project.keys() else 1
@@ -358,7 +370,11 @@ def parse_projects(projects):
   
 
 # %% ../nbs/01_parser.ipynb 22
-def parse_patents(patents):
+def parse_patents(patents:list, #
+                 )->str:
+    """
+    Function that receive the list of patents from a linkedin profile and return a string with all projects separated by semicolon
+    """
     patents_list = []
     for patent in patents:
         title = patent['title'] if 'title' in patent.keys() else ''
@@ -367,7 +383,11 @@ def parse_patents(patents):
  
 
 # %% ../nbs/01_parser.ipynb 23
-def parse_positions(positions):
+def parse_positions(positions:list, #List of dictionaries with all positions from the linkedin Profile
+                   ):
+    """
+    Function that takes a list of job positions from a linkedin profile and return information about the current, and the past positions
+    """
     old_positions = []
     current = {}
     while positions:
@@ -402,7 +422,11 @@ def parse_current_position(position:dict):
   
 
 # %% ../nbs/01_parser.ipynb 25
-def parse_date(dateOn):
+def parse_date(dateOn:dict, #Dictionary with dates
+              )->datetime:
+    """
+    Function to parse data from the dict to datetime object
+    """
     datelist = []
     for k in ['year', 'month', 'day']:
         if k in dateOn.keys():
@@ -423,17 +447,22 @@ def parse_past_positions(positions):
     return "/ ".join(pos_list)
 
 # %% ../nbs/01_parser.ipynb 27
-def load_har(file):
+def load_har(file:str, #Har file from the proxy server
+            )->dict:
     with open(file,'r') as fin:
         tmp = json.loads(fin.read())
     return tmp
   
 
 # %% ../nbs/01_parser.ipynb 28
-def load_hars(path, recursive=False):
+def load_hars(path:Union[Path, str],#Path or str where the HAR files are 
+              recursive:bool = False,#If it is a recursive search
+             )->dict:
+    if isinstance(path, str):
+        path = Path(str)
     tmp_j = {'log':{'entries':[]}}
     if recursive:
-        files = path.glob('**/*.har')
+        files = path.rglob('**/*.har')
     else:
         files = path.glob('*.har')
     for file in files:

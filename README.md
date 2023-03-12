@@ -9,15 +9,23 @@ documentation.
 ## Install
 
 ``` sh
-pip install -e ./
+pip install -e .
 ```
 
 ## How to use
 
 Fill me in please! Don’t forget code examples:
 
+first the driver plus the proxy driver are created through the Navigate
+class buildin
+
 ``` python
-1+1
+driver = Navigator(login=False)
 ```
 
-    2
+To close the Navigator use driver.close() whihc will close the driver
+and the proxy server
+
+``` python
+driver.close()
+```
