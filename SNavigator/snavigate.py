@@ -12,25 +12,28 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import ElementNotVisibleException, ElementNotSelectableException
 from selenium.webdriver.chrome.options import Options
+from bs4 import BeautifulSoup     
 from browsermobproxy import Server
 import pandas as pd
 from retry import retry
 from requests.exceptions import RequestException
-from .parser import *
-import os
-from dotenv import load_dotenv
-from bs4 import BeautifulSoup     
+
 import random
 import time
+import os
+from dotenv import load_dotenv
 
-# %% ../nbs/00_SNavigate.ipynb 6
+# %% ../nbs/00_SNavigate.ipynb 5
+from .parser import *
+
+# %% ../nbs/00_SNavigate.ipynb 7
 load_dotenv('/Volumes/Users/matu/pass.env')
 path_to_browsermobproxy = "/Volumes/Users/matu/Documents/Xcode/browsermob-proxy-2.1.4/bin/"
 url = 'https://www.linkedin.com/sales/login'
 username = os.environ.get('SN_USER')
 passw = os.environ.get('SN_PASS')
 
-# %% ../nbs/00_SNavigate.ipynb 7
+# %% ../nbs/00_SNavigate.ipynb 8
 class Navigator():
     def __init__(self
                  ,headless=False, #Make the Chromium Headless or not
@@ -49,7 +52,7 @@ class Navigator():
         if login:
             self.login()
 
-# %% ../nbs/00_SNavigate.ipynb 8
+# %% ../nbs/00_SNavigate.ipynb 9
 @patch
 def login(self:Navigator)->None:
         """
@@ -68,7 +71,7 @@ def login(self:Navigator)->None:
         wait = WebDriverWait(self.driver, timeout=30, poll_frequency=2, ignored_exceptions=[ElementNotVisibleException, ElementNotSelectableException])
         wait.until(lambda d: d.find_element(By.CLASS_NAME,"homepage__right-column"))        
 
-# %% ../nbs/00_SNavigate.ipynb 9
+# %% ../nbs/00_SNavigate.ipynb 10
 @patch
 def close(self:Navigator)->None:
         """
@@ -77,7 +80,7 @@ def close(self:Navigator)->None:
         self.server.stop()
         self.driver.close()
 
-# %% ../nbs/00_SNavigate.ipynb 10
+# %% ../nbs/00_SNavigate.ipynb 11
 @patch    
 def scroll_bottom(self:Navigator,
                       t_time: int=50, #Total time to spend in hte webpage
@@ -107,7 +110,7 @@ def scroll_bottom(self:Navigator,
             elif initial_height >= last_height:
                 break
 
-# %% ../nbs/00_SNavigate.ipynb 11
+# %% ../nbs/00_SNavigate.ipynb 12
 @patch    
 def next_page(self:Navigator, url=None)->bool:
         """
@@ -135,7 +138,7 @@ def next_page(self:Navigator, url=None)->bool:
         else:
             return False
 
-# %% ../nbs/00_SNavigate.ipynb 12
+# %% ../nbs/00_SNavigate.ipynb 13
 @patch
 def get_companies_ids(self:Navigator)->list:
         """
@@ -146,7 +149,7 @@ def get_companies_ids(self:Navigator)->list:
         ids = [f"{company.get('href').split('/')[-1]}" for company in companies]
         return ids
 
-# %% ../nbs/00_SNavigate.ipynb 13
+# %% ../nbs/00_SNavigate.ipynb 14
 @patch
 def scrap_ids(self:Navigator,
                   url=None
@@ -165,7 +168,7 @@ def scrap_ids(self:Navigator,
     
     
 
-# %% ../nbs/00_SNavigate.ipynb 14
+# %% ../nbs/00_SNavigate.ipynb 15
 @patch
 def get_url(self:Navigator,
                 url:str #Url string to visit and return the address
@@ -175,7 +178,7 @@ def get_url(self:Navigator,
         """
         self.driver.get(url)
 
-# %% ../nbs/00_SNavigate.ipynb 15
+# %% ../nbs/00_SNavigate.ipynb 16
 @patch
 def parse_search(self:Navigator,
                      url:str =None, #Url address for the search result
@@ -206,7 +209,7 @@ def parse_search(self:Navigator,
         else:
             return
 
-# %% ../nbs/00_SNavigate.ipynb 16
+# %% ../nbs/00_SNavigate.ipynb 17
 @patch
 def get_data(self:Navigator,
                  url:str = None, #Url to visit, 
